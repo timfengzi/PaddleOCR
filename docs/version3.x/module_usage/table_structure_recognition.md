@@ -56,7 +56,7 @@ comments: true
   <ul>
       <li><b>性能测试环境</b>
           <ul>
-              <li><strong>测试数据集：</strong>PaddleX 内部自建高难度中文表格识别数据集。</li>
+              <li><strong>测试数据集：</strong>内部自建的高难度中文表格识别数据集。</li>
               <li><strong>硬件配置：</strong>
                   <ul>
                       <li>GPU：NVIDIA Tesla T4</li>
@@ -97,7 +97,7 @@ comments: true
 
 ## 三、快速开始
 
-> ❗ 在快速开始前，请先安装 PaddleOCR 的 wheel 包，详细请参考 [安装教程](../ppocr/installation.md)。
+> ❗ 在快速开始前，请先安装 PaddleOCR 的 wheel 包，详细请参考 [安装教程](../installation.md)。
 
 使用一行命令即可快速体验：
 
@@ -147,7 +147,7 @@ for res in output:
 <td><code>model_name</code></td>
 <td>模型名称</td>
 <td><code>str</code></td>
-<td>所有PaddleX支持的模型名称</td>
+<td>所有支持的模型名称</td>
 <td>无</td>
 </tr>
 <tr>
@@ -180,7 +180,7 @@ for res in output:
 </tr>
 </table>
 
-* 其中，`model_name` 必须指定，指定 `model_name` 后，默认使用 PaddleX 内置的模型参数，在此基础上，指定 `model_dir` 时，使用用户自定义的模型。
+* 其中，`model_name` 必须指定，在此基础上，指定 `model_dir` 时，使用用户自定义的模型。
 
 * 调用表格结构识别模型的 `predict()` 方法进行推理预测，该方法会返回一个结果列表。另外，本模块还提供了 `predict_iter()` 方法。两者在参数接受和结果返回方面是完全一致的，区别在于 `predict_iter()` 返回的是一个 `generator`，能够逐步处理和获取预测结果，适合处理大型数据集或希望节省内存的场景。可以根据实际需求选择使用这两种方法中的任意一种。`predict()` 方法参数有 `input` 和 `batch_size`，具体说明如下：
 
@@ -290,4 +290,69 @@ for res in output:
 
 ## 四、二次开发
 
-......
+如果以上模型在您的场景上效果仍然不理想，您可以尝试以下步骤进行二次开发，此处以训练 `SLANet` 举例，其他模型替换对应配置文件即可。首先，您需要准备表格结构识别的数据集，可以参考[表格结构识别 Demo 数据](https://paddle-model-ecology.bj.bcebos.com/paddlex/data/table_rec_dataset_examples.tar)的格式准备，准备好后，即可按照以下步骤进行模型训练和导出，导出后，可以将模型快速集成到上述 API 中。此处以表格结构识别 Demo 数据示例。在训练模型之前，请确保已经按照[[安装文档](../installation.md)安装了 PaddleOCR 所需要的依赖。
+
+
+### 4.1 数据集、预训练模型准备
+
+#### 4.1.1 准备数据集
+
+```shell
+# 下载示例数据集
+wget https://paddle-model-ecology.bj.bcebos.com/paddlex/data/table_rec_dataset_examples.tar
+tar -xf table_rec_dataset_examples.tar
+```
+
+#### 4.1.2 下载预训练模型
+
+```shell
+# 下载 SLANet 预训练模型
+wget https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/SLANet_pretrained.pdparams
+```
+
+### 4.2 模型训练
+
+PaddleOCR 对代码进行了模块化，训练 `SLANet` 识别模型时需要使用 `SLANet` 的[配置文件](https://github.com/PaddlePaddle/PaddleOCR/blob/main/configs/table/SLANet.yml)。
+
+
+训练命令如下：
+
+```bash
+#单卡训练 (默认训练方式)
+python3 tools/train.py -c configs/table/SLANet.yml \
+   -o Global.pretrained_model=./SLANet_pretrained.pdparams
+#多卡训练，通过--gpus参数指定卡号
+python3 -m paddle.distributed.launch --gpus '0,1,2,3'  tools/train.py -c configs/table/SLANet.yml \
+        -o Global.pretrained_model=./SLANet_pretrained.pdparams
+```
+
+
+### 4.3 模型评估
+
+您可以评估已经训练好的权重，如，`output/xxx/xxx.pdparams`，使用如下命令进行评估：
+
+```bash
+# 注意将pretrained_model的路径设置为本地路径。若使用自行训练保存的模型，请注意修改路径和文件名为{path/to/weights}/{model_name}。
+ # demo 测试集评估
+ python3 tools/eval.py -c configs/table/SLANet.yml -o \
+ Global.pretrained_model=output/xxx/xxx.pdparams
+```
+
+### 4.4 模型导出
+
+```bash
+ python3 tools/export_model.py -c configs/table/SLANet.yml -o \
+ Global.pretrained_model=output/xxx/xxx.pdparams \
+ save_inference_dir="./SLANet_infer/"
+```
+
+ 导出模型后，静态图模型会存放于当前目录的`./SLANet_infer/`中，在该目录下，您将看到如下文件：
+ ```
+ ./SLANet_infer/
+ ├── inference.json
+ ├── inference.pdiparams
+ ├── inference.yml
+ ```
+至此，二次开发完成，该静态图模型可以直接集成到 PaddleOCR 的 API 中。
+
+## 五、FAQ
