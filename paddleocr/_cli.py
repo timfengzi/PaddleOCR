@@ -16,7 +16,6 @@ import argparse
 import logging
 import subprocess
 import sys
-
 import warnings
 
 from ._models import (
@@ -98,14 +97,16 @@ def _register_install_hpi_deps_command(subparsers):
     subparser.set_defaults(executor=_install_hpi_deps)
 
 
-def _parse_args():
+def _get_parser():
     parser = argparse.ArgumentParser(prog="paddleocr")
-    parser.add_argument("--version", action="version", version=f"%(prog)s {version}")
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"%(prog)s {version}"
+    )
     subparsers = parser.add_subparsers(dest="subcommand")
     _register_pipelines(subparsers)
     _register_models(subparsers)
     _register_install_hpi_deps_command(subparsers)
-    return parser.parse_args()
+    return parser
 
 
 def _execute(args):
@@ -115,5 +116,9 @@ def _execute(args):
 def main():
     logger.setLevel(logging.INFO)
     warnings.filterwarnings("default", category=CLIDeprecationWarning)
-    args = _parse_args()
+    parser = _get_parser()
+    args = parser.parse_args()
+    if args.subcommand is None:
+        parser.print_usage()
+        sys.exit(2)
     _execute(args)
