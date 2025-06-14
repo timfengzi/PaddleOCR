@@ -7,6 +7,39 @@ hide:
 
 ### 更新
 
+#### **🔥🔥2025.06.05: PaddleOCR v3.0.1 版本发布，包含：**
+- **优化部分模型和模型配置：**
+  - 更新 PP-OCRv5默认模型配置，检测和识别均由mobile改为server模型。为了改善大多数的场景默认效果，配置中的参数`limit_side_len`由736改为64
+  - 新增文本行方向分类`PP-LCNet_x1_0_textline_ori`模型，精度99.42%，OCR、PP-StructureV3、PP-ChatOCRv4产线的默认文本行方向分类器改为该模型
+  - 优化文本行方向分类`PP-LCNet_x0_25_textline_ori`模型，精度提升3.3个百分点，当前精度98.85%
+- **优化3.0.0版本部分存在的问题**
+  - **优化CLI使用体验：** 当使用PaddleOCR CLI不传入任何参数时，给出用法提示。
+  - **新增参数：** PP-ChatOCRv3、PP-StructureV3支持`use_textline_orientation`参数。
+  - **CPU推理速度优化：** 所有产线CPU推理默认开启MKL-DNN。
+  - **C++推理支持：** PP-OCRv5的检测和识别串联部分支持C++推理
+- **修复3.0.0版本部分存在的问题**
+  - 修复由于公式识别、表格识别模型无法使用MKL-DNN导致PP-StructureV3在部分cpu推理报错的问题
+  - 修复在部分GPU环境中推理报`FatalError: Process abort signal is detected by the operating system`错误的问题
+  - 修复部分Python3.8环境的type hint的问题
+  - 修复`PPStructureV3.concatenate_markdown_pages`方法不存在的问题。
+  - 修复实例化`paddleocr.PaddleOCR`时同时指定`lang`和`model_name`时`model_name`不生效的问题。
+
+#### **🔥🔥2025.05.20: PaddleOCR 3.0 正式发布，包含：**
+
+- **发布全场景文字识别模型PP-OCRv5：** 单模型支持五种文字类型和复杂手写体识别；整体识别精度相比上一代提升13个百分点。
+ 
+- **发布通用文档解析方案PP-StructureV3：** 支持多场景、多版式 PDF 高精度解析，在公开评测集中领先众多开源和闭源方案。
+
+- **发布智能文档理解方案PP-ChatOCRv4：** 原生支持文心大模型4.5 Turbo，精度相比上一代提升15个百分点。
+
+- **重构部署能力，统一推理接口：** PaddleOCR 3.0 融合了飞桨 PaddleX3.0 工具的底层能力，全面升级推理、部署模块，优化 2.x 版本的设计，统一并优化了 Python API 和命令行接口（CLI）。部署能力现覆盖高性能推理、服务化部署及端侧部署三大场景。
+
+- **适配飞桨框架 3.0，优化训练流程：** 新版本已兼容飞桨 3.0 的 CINN 编译器等最新特性，静态图模型存储文件名由 `xxx.pdmodel` 改为 `xxx.json`。
+
+- **统一模型名称：** 对PaddleOCR3.0支持的模型命名体系进行了更新，采用更规范、统一的命名规则，为后续迭代与维护奠定基础。
+
+- [2.x升级3.x其他说明](./upgrade_notes.md)。
+
 #### **🔥🔥2025.3.7 PaddleOCR 2.10 版本，主要包含如下内容**
 
 - **重磅新增 OCR 领域 12 个自研单模型：**

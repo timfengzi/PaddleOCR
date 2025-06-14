@@ -1,12 +1,12 @@
 [build-system]
-requires = ["setuptools==72.1.0"]
+requires = ["setuptools==72.1.0", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "paddleocr"
 # After each version release, the version number needs to be incremented
 dynamic = ["version"]
-description = "Awesome OCR toolkit based on PaddlePaddle"
+description = "Awesome multilingual OCR and document parsing toolkits based on PaddlePaddle"
 authors = [
     {name = "PaddlePaddle", email = "Paddle-better@baidu.com"},
 ]
@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "paddlex[ocr,ie,multimodal]==3.0.0rc1",
+    "paddlex[ocr,ie,multimodal]==3.0.1",
     "PyYAML>=6",
     "typing-extensions>=4.12",
 ]

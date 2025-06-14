@@ -12,17 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PIPELINE_MKLDNN_BLOCKLIST = [
-    "formula_recognition",
-    "table_recognition_v2",
-    "PP-StructureV3",
-]
-
-MODEL_MKLDNN_BLOCKLIST = [
-    "SLANeXt_wired",
-    "SLANeXt_wireless",
-    "LaTeX_OCR_rec",
-    "PP-FormulaNet-L",
-    "PP-FormulaNet-S",
-    "UniMERNet",
-]
+__version__ = "0.1.0"

@@ -25,8 +25,6 @@ from .._common_args import (
     parse_common_args,
     prepare_common_init_args,
 )
-from .._mkldnn_blocklists import PIPELINE_MKLDNN_BLOCKLIST
-from .._utils.logging import logger
 
 _DEFAULT_ENABLE_HPI = None
 
@@ -41,12 +39,15 @@ def _merge_dicts(d1, d2):
     return res
 
 
-def _to_plain_dict(d):
-    res = d.copy()
-    for k, v in d.items():
-        if isinstance(v, AttrDict):
-            res[k] = _to_plain_dict(v)
-    return res
+def _to_builtin(obj):
+    if isinstance(obj, AttrDict):
+        return {k: _to_builtin(v) for k, v in obj.items()}
+    elif isinstance(obj, dict):
+        return {k: _to_builtin(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_to_builtin(item) for item in obj]
+    else:
+        return obj
 
 
 class PaddleXPipelineWrapper(metaclass=abc.ABCMeta):
@@ -58,14 +59,6 @@ class PaddleXPipelineWrapper(metaclass=abc.ABCMeta):
     ):
         super().__init__()
         self._paddlex_config = paddlex_config
-        if (
-            common_args.get("enable_mkldnn", None) is None
-            and self._paddlex_pipeline_name in PIPELINE_MKLDNN_BLOCKLIST
-        ):
-            logger.warning(
-                f"oneDNN will be disabled for the {repr(self._paddlex_pipeline_name)} pipeline."
-            )
-            common_args["enable_mkldnn"] = False
         self._common_args = parse_common_args(
             common_args, default_enable_hpi=_DEFAULT_ENABLE_HPI
         )
@@ -79,7 +72,7 @@ class PaddleXPipelineWrapper(metaclass=abc.ABCMeta):
 
     def export_paddlex_config_to_yaml(self, yaml_path):
         with open(yaml_path, "w", encoding="utf-8") as f:
-            config = _to_plain_dict(self._merged_paddlex_config)
+            config = _to_builtin(self._merged_paddlex_config)
             yaml.safe_dump(config, f)
 
     @classmethod

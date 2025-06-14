@@ -64,6 +64,8 @@ class PPStructureV3(PaddleXPipelineWrapper):
         wired_table_cells_detection_model_dir=None,
         wireless_table_cells_detection_model_name=None,
         wireless_table_cells_detection_model_dir=None,
+        table_orientation_classify_model_name=None,
+        table_orientation_classify_model_dir=None,
         seal_text_detection_model_name=None,
         seal_text_detection_model_dir=None,
         seal_det_limit_side_len=None,
@@ -80,6 +82,7 @@ class PPStructureV3(PaddleXPipelineWrapper):
         formula_recognition_batch_size=None,
         use_doc_orientation_classify=None,
         use_doc_unwarping=None,
+        use_textline_orientation=None,
         use_seal_recognition=None,
         use_table_recognition=None,
         use_formula_recognition=None,
@@ -240,6 +243,9 @@ class PPStructureV3(PaddleXPipelineWrapper):
             )
         )
 
+    def concatenate_markdown_pages(self, markdown_list):
+        return self.paddlex_pipeline.concatenate_markdown_pages(markdown_list)
+
     @classmethod
     def get_cli_subcommand_executor(cls):
         return PPStructureV3CLISubcommandExecutor()
@@ -252,9 +258,14 @@ class PPStructureV3(PaddleXPipelineWrapper):
             "SubPipelines.DocPreprocessor.use_doc_unwarping": self._params[
                 "use_doc_unwarping"
             ],
+            "SubPipelines.GeneralOCR.use_textline_orientation": self._params[
+                "use_textline_orientation"
+            ],
             "use_seal_recognition": self._params["use_seal_recognition"],
             "use_table_recognition": self._params["use_table_recognition"],
             "use_formula_recognition": self._params["use_formula_recognition"],
+            "use_chart_recognition": self._params["use_chart_recognition"],
+            "use_region_detection": self._params["use_region_detection"],
             "SubModules.LayoutDetection.model_name": self._params[
                 "layout_detection_model_name"
             ],
@@ -367,6 +378,54 @@ class PPStructureV3(PaddleXPipelineWrapper):
             ],
             "SubPipelines.TableRecognition.SubModules.WirelessTableCellsDetection.model_dir": self._params[
                 "wireless_table_cells_detection_model_dir"
+            ],
+            "SubPipelines.TableRecognition.SubModules.TableOrientationClassify.model_name": self._params[
+                "table_orientation_classify_model_name"
+            ],
+            "SubPipelines.TableRecognition.SubModules.TableOrientationClassify.model_dir": self._params[
+                "table_orientation_classify_model_dir"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.model_name": self._params[
+                "text_detection_model_name"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.model_dir": self._params[
+                "text_detection_model_dir"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.limit_side_len": self._params[
+                "text_det_limit_side_len"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.limit_type": self._params[
+                "text_det_limit_type"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.thresh": self._params[
+                "text_det_thresh"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.box_thresh": self._params[
+                "text_det_box_thresh"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextDetection.unclip_ratio": self._params[
+                "text_det_unclip_ratio"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextLineOrientation.model_name": self._params[
+                "textline_orientation_model_name"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextLineOrientation.model_dir": self._params[
+                "textline_orientation_model_dir"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextLineOrientation.batch_size": self._params[
+                "textline_orientation_batch_size"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextRecognition.model_name": self._params[
+                "text_recognition_model_name"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextRecognition.model_dir": self._params[
+                "text_recognition_model_dir"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextRecognition.batch_size": self._params[
+                "text_recognition_batch_size"
+            ],
+            "SubPipelines.TableRecognition.SubPipelines.GeneralOCR.SubModules.TextRecognition.score_thresh": self._params[
+                "text_rec_score_thresh"
             ],
             "SubPipelines.SealRecognition.SubPipelines.SealOCR.SubModules.TextDetection.model_name": self._params[
                 "seal_text_detection_model_name"
@@ -536,17 +595,17 @@ class PPStructureV3CLISubcommandExecutor(PipelineCLISubcommandExecutor):
         subparser.add_argument(
             "--textline_orientation_model_name",
             type=str,
-            help="Name of the text tetextline orientation.",
+            help="Name of the text line orientation classification model.",
         )
         subparser.add_argument(
             "--textline_orientation_model_dir",
             type=str,
-            help="Path to the text tetextline orientation directory.",
+            help="Path to the text line orientation classification directory.",
         )
         subparser.add_argument(
             "--textline_orientation_batch_size",
             type=int,
-            help="Batch size for the tetextline orientation model.",
+            help="Batch size for the text line orientation classification model.",
         )
         subparser.add_argument(
             "--text_recognition_model_name",
@@ -696,13 +755,18 @@ class PPStructureV3CLISubcommandExecutor(PipelineCLISubcommandExecutor):
             "--use_doc_orientation_classify",
             type=str2bool,
             default=False,
-            help="Whether to use the document image orientation classification model.",
+            help="Whether to use document image orientation classification.",
         )
         subparser.add_argument(
             "--use_doc_unwarping",
             type=str2bool,
             default=False,
-            help="Whether to use the text image unwarping model.",
+            help="Whether to use text image unwarping.",
+        )
+        subparser.add_argument(
+            "--use_textline_orientation",
+            type=str2bool,
+            help="Whether to use text line orientation classification.",
         )
         subparser.add_argument(
             "--use_seal_recognition",
@@ -733,4 +797,12 @@ class PPStructureV3CLISubcommandExecutor(PipelineCLISubcommandExecutor):
 
     def execute_with_args(self, args):
         params = get_subcommand_args(args)
-        perform_simple_inference(PPStructureV3, params)
+        perform_simple_inference(
+            PPStructureV3,
+            params,
+            predict_param_names={
+                "use_doc_orientation_classify",
+                "use_doc_unwarping",
+                "use_chart_recognition",
+            },
+        )
